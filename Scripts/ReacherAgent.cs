@@ -12,11 +12,13 @@ public class ReacherAgent : Agent
     public GameObject pendulumB;
     public GameObject hand;
     public GameObject goal;
+    public float Stimulus_Distance = 9f;
     Vector3 lastGoalPos;
     Vector3 RandomPos;
     float m_GoalDegree;
     public float steps = 0;
     public float decreasingReward = 1f;
+    float decreasing = -0.001f;
     float moveSpeed = 0f;
     float movePenalty = -0.0001f;
     float StimulusTime = 200f;
@@ -24,6 +26,7 @@ public class ReacherAgent : Agent
     float goalVisible;
     float Total_movement = 0f;
     float Total_movement_per_ep = 0f;
+    //float distance;
     Rigidbody m_RbA;
     Rigidbody m_RbB;
     // speed of the goal zone around the arm (in radians)
@@ -175,8 +178,11 @@ public class ReacherAgent : Agent
         torqueZ = Mathf.Clamp(actionBuffers.ContinuousActions[3], -1f, 1f) * 150f;
         m_RbB.AddTorque(new Vector3(torqueX, 0f, torqueZ));
 
-        decreasingReward -= 0.001f;
 
+        decreasing = Academy.Instance.EnvironmentParameters.GetWithDefault("discount", decreasing);
+        decreasingReward += decreasing;
+
+        movePenalty = Academy.Instance.EnvironmentParameters.GetWithDefault("Punishment", movePenalty);
         float penaltyToApply = movePenalty * moveSpeed;
         GetComponent<ReacherAgent>().AddReward(penaltyToApply); //was 0.00001
 
@@ -188,8 +194,9 @@ public class ReacherAgent : Agent
     void UpdateGoalPosition()
     {
 
+        Stimulus_Distance = Academy.Instance.EnvironmentParameters.GetWithDefault("Stimulus_Distance", Stimulus_Distance);
         var random = new System.Random();
-        var list = new List<int> { 6, -6 };
+        var list = new List<float> { Stimulus_Distance, -Stimulus_Distance };
         int Ypos = random.Next(list.Count);
         //int Xpos = random.Next(list.Count);
         int Zpos = random.Next(list.Count);

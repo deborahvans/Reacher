@@ -378,7 +378,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 1d02cca1dc9294d2bb3e43cddf6ec94f, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 13eb412e8eccf487b8bc4cef413a6dc2, type: 3}
   m_InferenceDevice: 2
   m_BehaviorType: 0
   m_BehaviorName: Reacher
@@ -406,6 +406,7 @@ MonoBehaviour:
   pendulumB: {fileID: 1053261483945176}
   hand: {fileID: 1654288206095398}
   goal: {fileID: 1986879271678326}
+  Stimulus_Distance: 9
   steps: 0
   decreasingReward: 1
   backup: {fileID: 3484417247052034139, guid: a1945d70b47c34372b4d53533c9016cd, type: 3}
