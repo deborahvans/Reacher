@@ -16,7 +16,7 @@ public class ReacherAgent : Agent
     Vector3 lastGoalPos;
     Vector3 RandomPos;
     float m_GoalDegree;
-    public float steps = 0;
+    float steps = 0f;
     public float decreasingReward = 1f;
     float decreasing = -0.001f;
     float moveSpeed = 0f;
@@ -26,6 +26,7 @@ public class ReacherAgent : Agent
     float goalVisible;
     float Total_movement = 0f;
     float Total_movement_per_ep = 0f;
+    float mean_m;
     //float distance;
     Rigidbody m_RbA;
     Rigidbody m_RbB;
@@ -103,11 +104,15 @@ public class ReacherAgent : Agent
         Total_movement_per_ep += moveSpeed;
         prevHandPos = hand.transform.position;
 
+        if (steps < -0.00001f | steps > 0.00001f)
+        {
+            mean_m = Total_movement_per_ep / steps;
+            m_recorder.Add("mean movement per step", mean_m);
+        }
 
-        m_recorder.Add("mean movement per step", Total_movement_per_ep / steps);
-        
 
-        //Debug.Log(moveSpeed);
+
+        //Debug.Log(Total_movement_per_ep / steps);
 
     }
 
