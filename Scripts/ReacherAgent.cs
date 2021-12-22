@@ -27,6 +27,7 @@ public class ReacherAgent : Agent
     float Total_movement = 0f;
     float Total_movement_per_ep = 0f;
     float mean_m;
+    float samp;
     //float distance;
     Rigidbody m_RbA;
     Rigidbody m_RbB;
@@ -44,6 +45,7 @@ public class ReacherAgent : Agent
 
     StatsRecorder m_recorder;
 
+    float ISI_distance;
 
     EnvironmentParameters m_ResetParams;
     
@@ -87,7 +89,6 @@ public class ReacherAgent : Agent
         }
         else
         {
-            m_recorder.Add("distance to base", Vector3.Distance(new Vector3(9f, 0f, 0f), hand.transform.position - transform.position));
             RandomPos = ChooseRandomPosition(transform.position, 0f, 360f, 0f, 9f);
             sensor.AddObservation(lastGoalPos);
             goalVisible = 0.0f;
@@ -95,6 +96,15 @@ public class ReacherAgent : Agent
 
         sensor.AddObservation(hand.transform.localPosition);
         sensor.AddObservation(goalVisible);
+
+        //Debug.Log(steps);
+        //if (steps == -1)
+        //{
+        //    Debug.Log(Vector3.Distance(new Vector3(9f, 0f, 0f), hand.transform.position - transform.position));
+        //    m_recorder.Add("DTB before onset", Vector3.Distance(new Vector3(9f, 0f, 0f), hand.transform.position - transform.position));
+        //    m_recorder.Add("HIST before onset", Vector3.Distance(new Vector3(9f, 0f, 0f), hand.transform.position - transform.position), StatAggregationMethod.Histogram);
+        //    //m_recorder.Add("Coordinate hand before onset", hand.transform.position);
+        //}
 
         m_recorder.Add("total movement", Total_movement);
         
@@ -104,10 +114,16 @@ public class ReacherAgent : Agent
         Total_movement_per_ep += moveSpeed;
         prevHandPos = hand.transform.position;
 
-        if (steps < -0.00001f | steps > 0.00001f)
+        if (steps < -0.00001f)
+        {
+            mean_m = Total_movement_per_ep / (steps * -1);
+            m_recorder.Add("Movement rest", mean_m);
+        }
+
+        if (steps > 0.00001f)
         {
             mean_m = Total_movement_per_ep / steps;
-            m_recorder.Add("mean movement per step", mean_m);
+            m_recorder.Add("Movement stimulus", mean_m);
         }
 
 
@@ -145,6 +161,8 @@ public class ReacherAgent : Agent
             goal.transform.parent = transform;
             //goal.transform.localPosition = transform.localPosition;
             UpdateGoalPosition();
+            Total_movement_per_ep = 0;
+            m_recorder.Add("Average DTB", ISI_distance / RestTime);
         }
 
 
@@ -154,8 +172,10 @@ public class ReacherAgent : Agent
             if (goal != null)
             {
                 Destroy(goal);
+                ISI_distance = 0;
             }
             steps = - RestTime;
+            Total_movement_per_ep = 0;
         }
 
         //if (appear.Contains(steps))
@@ -175,13 +195,27 @@ public class ReacherAgent : Agent
         //}
 
 
-        var torqueX = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f) * 150f;
-        var torqueZ = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f) * 150f;
+        //var torqueX = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f) * 150f;
+        //var torqueZ = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f) * 150f;
+        //m_RbA.AddTorque(new Vector3(torqueX, 0f, torqueZ));
+
+        //torqueX = Mathf.Clamp(actionBuffers.ContinuousActions[2], -1f, 1f) * 150f;
+        //torqueZ = Mathf.Clamp(actionBuffers.ContinuousActions[3], -1f, 1f) * 150f;
+        //m_RbB.AddTorque(new Vector3(torqueX, 0f, torqueZ));
+
+
+
+
+        var torqueX = actionBuffers.ContinuousActions[0] * 150f;
+        var torqueZ = actionBuffers.ContinuousActions[1] * 150f;
         m_RbA.AddTorque(new Vector3(torqueX, 0f, torqueZ));
 
-        torqueX = Mathf.Clamp(actionBuffers.ContinuousActions[2], -1f, 1f) * 150f;
-        torqueZ = Mathf.Clamp(actionBuffers.ContinuousActions[3], -1f, 1f) * 150f;
+        torqueX = actionBuffers.ContinuousActions[2] * 150f;
+        torqueZ = actionBuffers.ContinuousActions[3] * 150f;
         m_RbB.AddTorque(new Vector3(torqueX, 0f, torqueZ));
+
+
+
 
 
         decreasing = Academy.Instance.EnvironmentParameters.GetWithDefault("discount", decreasing);
@@ -191,24 +225,80 @@ public class ReacherAgent : Agent
         float penaltyToApply = movePenalty * moveSpeed;
         GetComponent<ReacherAgent>().AddReward(penaltyToApply); //was 0.00001
 
+        ISI_distance += Vector3.Distance(new Vector3(0f, 9f, 0f), hand.transform.position - transform.position);
+
+        if (steps == -1)
+        {
+            //Debug.Log(Vector3.Distance(new Vector3(9f, 0f, 0f), hand.transform.position - transform.position));
+            m_recorder.Add("DTB before onset", Vector3.Distance(new Vector3(0f, 9f, 0f), hand.transform.position - transform.position));
+            m_recorder.Add("HIST before onset", Vector3.Distance(new Vector3(0f, 9f, 0f), hand.transform.position - transform.position), StatAggregationMethod.Histogram);
+            m_recorder.Add("Coordinate/X", (hand.transform.position - transform.position)[0]);
+            m_recorder.Add("Coordinate/Y", (hand.transform.position - transform.position)[1]);
+            m_recorder.Add("Coordinate/Z", (hand.transform.position - transform.position)[2]);
+            //Debug.Log((hand.transform.position - transform.position)[0]);
+        }
+
+
     }
 
     /// <summary>
     /// Used to move the position of the target goal around the agent.
     /// </summary>
+    ///
+
+
     void UpdateGoalPosition()
     {
 
         Stimulus_Distance = Academy.Instance.EnvironmentParameters.GetWithDefault("Stimulus_Distance", Stimulus_Distance);
         var random = new System.Random();
-        var list = new List<float> { Stimulus_Distance, -Stimulus_Distance };
-        int Ypos = random.Next(list.Count);
+        //var list = new List<float> { Stimulus_Distance, -Stimulus_Distance };
         //int Xpos = random.Next(list.Count);
-        int Zpos = random.Next(list.Count);
+        ////int Xpos = random.Next(list.Count);
+        //int Zpos = random.Next(list.Count);
         //-6f
 
+        float Zpos;
+
+        var rnd = System.Convert.ToDouble(random.Next(1, 100));
+        samp = (float)(rnd / 100);
+
+        if (samp < 0.5d)
+        {
+            Zpos = Stimulus_Distance;
+        }
+
+        else
+        {
+            Zpos = -Stimulus_Distance;
+        }
+
+        float Xpos;
+
+        var rnd2 = System.Convert.ToDouble(random.Next(1, 100));
+        samp = (float)(rnd2 / 100);
+
+        if (samp < 0.5d)
+        {
+            Xpos = Stimulus_Distance;
+        }
+
+        else
+        {
+            Xpos = -Stimulus_Distance;
+        }
+
+        //Debug.Log(samp.ToString());
+
+
         //goal.transform.position = new Vector3(list[Ypos], 0f, list[Xpos]) + transform.position;
-        goal.transform.localPosition = new Vector3(9, list[Ypos], list[Zpos]);
+        //goal.transform.localPosition = new Vector3(list[Xpos], 9, list[Zpos]);
+        goal.transform.localPosition = new Vector3(Xpos, 9, Zpos);
+
+        //Debug.Log("Xpos = ");
+        //Debug.Log(list[Xpos]);
+        //Debug.Log("Zos = ");
+        //Debug.Log(Zpos);
         //var radians = m_GoalDegree * Mathf.PI / 180f;
         //var goalX = 8f * Mathf.Cos(radians);
         //var goalY = 8f * Mathf.Sin(radians);
@@ -224,6 +314,7 @@ public class ReacherAgent : Agent
         decreasingReward = 1f;
         steps = 0;
         Total_movement_per_ep = 0;
+        Total_movement = 0;
         prevHandPos = hand.transform.position;
 
         pendulumA.transform.position = new Vector3(0f, -4f, 0f) + transform.position;
