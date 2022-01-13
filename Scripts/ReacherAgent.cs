@@ -46,6 +46,9 @@ public class ReacherAgent : Agent
     StatsRecorder m_recorder;
 
     float ISI_distance;
+    float ISI_x;
+    float ISI_y;
+    float ISI_z;
 
     EnvironmentParameters m_ResetParams;
     
@@ -163,20 +166,56 @@ public class ReacherAgent : Agent
             UpdateGoalPosition();
             Total_movement_per_ep = 0;
             m_recorder.Add("Average DTB", ISI_distance / RestTime);
+            m_recorder.Add("Average/X", ISI_x / RestTime);
+            m_recorder.Add("Average/Y", ISI_y / RestTime);
+            m_recorder.Add("Average/Z", ISI_z / RestTime);
         }
 
-
-        if (steps == StimulusTime)
+        if (steps > 0)
         {
-            
-            if (goal != null)
+            if (goal == null)
             {
-                Destroy(goal);
+                steps = -RestTime;
                 ISI_distance = 0;
+                ISI_x = 0;
+                ISI_y = 0;
+                ISI_z = 0;
+                Total_movement_per_ep = 0;
             }
-            steps = - RestTime;
-            Total_movement_per_ep = 0;
+            else 
+            {
+
+                if (steps == StimulusTime)
+                {
+                    Destroy(goal);
+                    steps = -RestTime;
+                    ISI_distance = 0;
+                    ISI_x = 0;
+                    ISI_y = 0;
+                    ISI_z = 0;
+                    Total_movement_per_ep = 0;
+                }
+
+
+            }
+
         }
+
+        //if (steps == StimulusTime)
+        //{
+            
+        //    if (goal != null)
+        //    {
+        //        Destroy(goal);
+        //    }
+
+        //    ISI_distance = 0;
+        //    ISI_x = 0;
+        //    ISI_y = 0;
+        //    ISI_z = 0;
+        //    steps = - RestTime;
+        //    Total_movement_per_ep = 0;
+        //}
 
         //if (appear.Contains(steps))
         //{
@@ -226,6 +265,9 @@ public class ReacherAgent : Agent
         GetComponent<ReacherAgent>().AddReward(penaltyToApply); //was 0.00001
 
         ISI_distance += Vector3.Distance(new Vector3(0f, 9f, 0f), hand.transform.position - transform.position);
+        ISI_x += (hand.transform.position - transform.position)[0];
+        ISI_y += (hand.transform.position - transform.position)[1];
+        ISI_z += (hand.transform.position - transform.position)[2];
 
         if (steps == -1)
         {
@@ -263,7 +305,7 @@ public class ReacherAgent : Agent
         var rnd = System.Convert.ToDouble(random.Next(1, 100));
         samp = (float)(rnd / 100);
 
-        if (samp < 0.5d)
+        if (samp < 0.8d)
         {
             Zpos = Stimulus_Distance;
         }
@@ -311,6 +353,9 @@ public class ReacherAgent : Agent
     /// </summary>
     public override void OnEpisodeBegin()
     {
+
+        m_recorder = Academy.Instance.StatsRecorder;
+
         decreasingReward = 1f;
         steps = 0;
         Total_movement_per_ep = 0;
@@ -340,8 +385,6 @@ public class ReacherAgent : Agent
             goal.transform.parent = transform;
             
         }
-
-        m_recorder = Academy.Instance.StatsRecorder;
 
         goal.transform.localScale = new Vector3(m_GoalSize, m_GoalSize, m_GoalSize);
         UpdateGoalPosition();
