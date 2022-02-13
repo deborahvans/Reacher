@@ -49,6 +49,12 @@ public class ReacherAgent : Agent
     float ISI_x;
     float ISI_y;
     float ISI_z;
+    float freq = 0.5f;
+
+
+    float Total_stim = 1;
+    float stim_x = 1;
+    float stim_z = 1;
 
     EnvironmentParameters m_ResetParams;
     
@@ -292,6 +298,9 @@ public class ReacherAgent : Agent
     void UpdateGoalPosition()
     {
 
+        freq = Academy.Instance.EnvironmentParameters.GetWithDefault("Frequency", freq);
+
+        Total_stim++;
         Stimulus_Distance = Academy.Instance.EnvironmentParameters.GetWithDefault("Stimulus_Distance", Stimulus_Distance);
         var random = new System.Random();
         //var list = new List<float> { Stimulus_Distance, -Stimulus_Distance };
@@ -305,9 +314,10 @@ public class ReacherAgent : Agent
         var rnd = System.Convert.ToDouble(random.Next(1, 100));
         samp = (float)(rnd / 100);
 
-        if (samp < 0.8d)
+        if (samp < freq)
         {
-            Zpos = Stimulus_Distance;
+            Zpos = (Stimulus_Distance - 5f);
+            stim_z++;
         }
 
         else
@@ -320,9 +330,10 @@ public class ReacherAgent : Agent
         var rnd2 = System.Convert.ToDouble(random.Next(1, 100));
         samp = (float)(rnd2 / 100);
 
-        if (samp < 0.5d)
+        if (samp < freq)
         {
             Xpos = Stimulus_Distance;
+            stim_x++;
         }
 
         else
@@ -330,7 +341,7 @@ public class ReacherAgent : Agent
             Xpos = -Stimulus_Distance;
         }
 
-        //Debug.Log(samp.ToString());
+        //Debug.Log((Total_stim, stim_x, stim_z));
 
 
         //goal.transform.position = new Vector3(list[Ypos], 0f, list[Xpos]) + transform.position;
@@ -355,6 +366,14 @@ public class ReacherAgent : Agent
     {
 
         m_recorder = Academy.Instance.StatsRecorder;
+
+        m_recorder.Add("stats/total", Total_stim);
+        m_recorder.Add("stats/x", stim_x/Total_stim);
+        m_recorder.Add("stats/z", stim_z/Total_stim);
+
+        Total_stim = 0;
+        stim_x = 0;
+        stim_z = 0;
 
         decreasingReward = 1f;
         steps = 0;
