@@ -314,9 +314,9 @@ public class ReacherAgent : Agent
         var rnd = System.Convert.ToDouble(random.Next(1, 100));
         samp = (float)(rnd / 100);
 
-        if (samp < freq)
+        if (samp < 0.5d)
         {
-            Zpos = (Stimulus_Distance - 5f);
+            Zpos = (Stimulus_Distance);
             stim_z++;
         }
 
